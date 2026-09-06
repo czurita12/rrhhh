@@ -1,22 +1,23 @@
-/* style.css — estilos compartidos del sistema de RRHH */
+/* style.css — estilos compartidos del sistema de RRHH — paleta de marca MG */
 
 :root {
-  --color-fondo: #f5f6f8;
+  --color-fondo: #f4f4f5;
   --color-tarjeta: #ffffff;
-  --color-primario: #2b5d62;
-  --color-primario-oscuro: #1f4448;
-  --color-acento: #d98e3c;
-  --color-texto: #1f2937;
-  --color-texto-suave: #6b7280;
-  --color-borde: #e5e7eb;
+  --color-primario: #141416;
+  --color-primario-oscuro: #000000;
+  --color-acento: #ED1C24;
+  --color-acento-oscuro: #C4141B;
+  --color-texto: #1a1a1a;
+  --color-texto-suave: #6b6b6f;
+  --color-borde: #e4e4e7;
   --color-exito: #2e7d4f;
   --color-exito-fondo: #e6f4ea;
-  --color-error: #b3261e;
-  --color-error-fondo: #fbeceb;
+  --color-error: #C4141B;
+  --color-error-fondo: #fdeceb;
   --color-pendiente: #8a6d1f;
   --color-pendiente-fondo: #fbf1da;
   --radio: 10px;
-  --sombra: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -42,6 +43,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background: var(--color-primario-oscuro);
 }
 
 .auth-tarjeta {
@@ -56,33 +58,23 @@ h1, h2, h3 {
 .auth-marca {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.auth-marca .icono {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--color-primario);
-  color: white;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 15px;
+  margin-bottom: 22px;
+  background: var(--color-primario-oscuro);
+  border-radius: 8px;
+  padding: 18px;
 }
 
-.auth-marca span {
-  font-weight: 650;
-  font-size: 15px;
-  color: var(--color-primario-oscuro);
+.auth-marca img {
+  height: 40px;
+  width: auto;
 }
 
 .auth-tarjeta p.subtitulo {
   color: var(--color-texto-suave);
   font-size: 14px;
   margin: -6px 0 20px 0;
+  text-align: center;
 }
 
 /* ---------- Formularios ---------- */
@@ -107,9 +99,9 @@ input, select, textarea {
 }
 
 input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--color-primario);
+  outline: 2px solid var(--color-acento);
   outline-offset: 1px;
-  border-color: var(--color-primario);
+  border-color: var(--color-acento);
 }
 
 button, .boton {
@@ -129,15 +121,22 @@ button, .boton {
 }
 .boton-primario:hover { background: var(--color-primario-oscuro); }
 
+.boton-acento {
+  background: var(--color-acento);
+  color: white;
+}
+.boton-acento:hover { background: var(--color-acento-oscuro); }
+
 .boton-secundario {
   background: white;
   color: var(--color-primario);
-  border: 1px solid var(--color-primario);
+  border: 1px solid var(--color-borde);
 }
+.boton-secundario:hover { border-color: var(--color-primario); }
 
 .boton-texto {
   background: none;
-  color: var(--color-primario);
+  color: var(--color-acento);
   padding: 0;
   font-weight: 600;
 }
@@ -148,7 +147,7 @@ button, .boton {
   color: var(--color-texto-suave);
   margin-top: 18px;
 }
-.enlace-abajo a { color: var(--color-primario); font-weight: 600; text-decoration: none; }
+.enlace-abajo a { color: var(--color-acento); font-weight: 600; text-decoration: none; }
 
 .mensaje-error {
   background: var(--color-error-fondo);
@@ -172,9 +171,8 @@ button, .boton {
 
 /* ---------- Layout de la app (dashboard / admin) ---------- */
 .app-header {
-  background: var(--color-tarjeta);
-  border-bottom: 1px solid var(--color-borde);
-  padding: 14px 28px;
+  background: var(--color-primario-oscuro);
+  padding: 12px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,21 +182,11 @@ button, .boton {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 650;
-  color: var(--color-primario-oscuro);
 }
 
-.app-header .marca .icono {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: var(--color-primario);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 13px;
+.app-header .marca img {
+  height: 28px;
+  width: auto;
 }
 
 .app-header .usuario-info {
@@ -206,7 +194,21 @@ button, .boton {
   align-items: center;
   gap: 14px;
   font-size: 13.5px;
-  color: var(--color-texto-suave);
+  color: #d4d4d8;
+}
+
+.app-header .usuario-info button {
+  background: transparent;
+  color: white;
+  border: 1px solid #3f3f46;
+}
+.app-header .usuario-info button:hover {
+  border-color: var(--color-acento);
+}
+
+.franja-acento {
+  height: 3px;
+  background: var(--color-acento);
 }
 
 .app-contenido {
@@ -227,12 +229,13 @@ button, .boton {
   border-radius: var(--radio);
   box-shadow: var(--sombra);
   padding: 18px 20px;
+  border-top: 3px solid var(--color-acento);
 }
 
 .tarjeta-resumen .numero {
   font-size: 28px;
   font-weight: 700;
-  color: var(--color-primario-oscuro);
+  color: var(--color-primario);
 }
 
 .tarjeta-resumen .etiqueta {
@@ -274,7 +277,7 @@ th {
   padding: 10px 8px;
   color: var(--color-texto-suave);
   font-weight: 600;
-  border-bottom: 1px solid var(--color-borde);
+  border-bottom: 2px solid var(--color-primario);
 }
 
 td {
@@ -330,7 +333,7 @@ td {
 }
 .tab.activo {
   color: var(--color-primario);
-  border-bottom-color: var(--color-primario);
+  border-bottom-color: var(--color-acento);
 }
 
 @media (max-width: 600px) {

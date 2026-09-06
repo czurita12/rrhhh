@@ -22,6 +22,8 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 // Tabla de usuarios (empleados y administradores)
+// dias_por_anio: cuántos días de vacaciones acumula el empleado por cada año
+// completo de antigüedad (por defecto 15, se puede ajustar por persona).
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +32,7 @@ db.exec(`
     password_hash TEXT NOT NULL,
     rol TEXT NOT NULL DEFAULT 'empleado' CHECK(rol IN ('empleado', 'admin')),
     fecha_ingreso TEXT NOT NULL,
-    dias_totales INTEGER NOT NULL DEFAULT 15,
+    dias_por_anio INTEGER NOT NULL DEFAULT 15,
     creado_en TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);

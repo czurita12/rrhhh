@@ -4,10 +4,10 @@
 const express = require('express');
 const db = require('../database');
 const { requiereLogin, requiereAdmin } = require('../middleware/auth');
+const { calcularSaldo } = require('../utils/vacaciones');
 
 const router = express.Router();
 
-// Cuenta los días entre dos fechas (inclusive). Simple: no descuenta fines de semana.
 function contarDias(fechaInicio, fechaFin) {
   const inicio = new Date(fechaInicio);
   const fin = new Date(fechaFin);
@@ -15,20 +15,7 @@ function contarDias(fechaInicio, fechaFin) {
   return Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
-function diasDisponibles(usuarioId) {
-  const usuario = db.prepare('SELECT dias_totales FROM usuarios WHERE id = ?').get(usuarioId);
-  const anioActual = new Date().getFullYear().toString();
-  const fila = db.prepare(`
-    SELECT COALESCE(SUM(dias), 0) AS total
-    FROM solicitudes
-    WHERE usuario_id = ? AND tipo = 'vacaciones' AND estado = 'aprobada'
-      AND strftime('%Y', fecha_inicio) = ?
-  `).get(usuarioId, anioActual);
-  return usuario.dias_totales - fila.total;
-}
-
 // POST /api/solicitudes
-// El empleado crea una nueva solicitud de vacaciones o permiso
 router.post('/', requiereLogin, (req, res) => {
   const { tipo, fecha_inicio, fecha_fin, motivo } = req.body;
 
@@ -44,12 +31,12 @@ router.post('/', requiereLogin, (req, res) => {
     return res.status(400).json({ error: 'La fecha de fin debe ser igual o posterior a la fecha de inicio.' });
   }
 
-  // Si es vacaciones, avisamos (pero no bloqueamos) si excede el saldo disponible
   if (tipo === 'vacaciones') {
-    const disponibles = diasDisponibles(req.session.usuarioId);
-    if (dias > disponibles) {
+    const usuario = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.session.usuarioId);
+    const saldo = calcularSaldo(usuario);
+    if (dias > saldo.dias_disponibles) {
       return res.status(400).json({
-        error: `Solo tienes ${disponibles} día(s) de vacaciones disponibles y estás solicitando ${dias}.`
+        error: `Solo tienes ${saldo.dias_disponibles} día(s) de vacaciones disponibles y estás solicitando ${dias}.`
       });
     }
   }
@@ -63,7 +50,6 @@ router.post('/', requiereLogin, (req, res) => {
 });
 
 // GET /api/solicitudes/mias
-// El empleado ve sus propias solicitudes
 router.get('/mias', requiereLogin, (req, res) => {
   const solicitudes = db.prepare(`
     SELECT * FROM solicitudes WHERE usuario_id = ? ORDER BY creado_en DESC
@@ -72,7 +58,6 @@ router.get('/mias', requiereLogin, (req, res) => {
 });
 
 // GET /api/solicitudes (solo admin)
-// El admin ve todas las solicitudes, con el nombre del empleado
 router.get('/', requiereAdmin, (req, res) => {
   const { estado } = req.query;
   let sql = `
@@ -92,7 +77,6 @@ router.get('/', requiereAdmin, (req, res) => {
 });
 
 // PUT /api/solicitudes/:id/estado (solo admin)
-// Aprobar o rechazar una solicitud
 router.put('/:id/estado', requiereAdmin, (req, res) => {
   const { id } = req.params;
   const { estado, comentario_admin } = req.body;

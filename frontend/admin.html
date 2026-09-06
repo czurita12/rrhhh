@@ -10,14 +10,15 @@
 
 <header class="app-header">
   <div class="marca">
-    <div class="icono">RH</div>
-    Portal RRHH · Admin
+    <img src="img/logo.png" alt="Logo de la empresa">
+    <span style="color:#d4d4d8; font-size:13px;">· Admin</span>
   </div>
   <div class="usuario-info">
     <span id="nombre-usuario">Cargando...</span>
-    <button class="boton-secundario" id="btn-salir">Cerrar sesión</button>
+    <button id="btn-salir">Cerrar sesión</button>
   </div>
 </header>
+<div class="franja-acento"></div>
 
 <div class="app-contenido">
 
@@ -125,14 +126,15 @@
         <td>${u.nombre}</td>
         <td>${u.email}</td>
         <td>${formatearFecha(u.fecha_ingreso)}</td>
-        <td>${u.dias_disponibles} / ${u.dias_totales}</td>
+        <td>${u.anios_cumplidos} año(s)</td>
+        <td>${u.dias_disponibles} disp. (${u.dias_acumulados} acumulados)</td>
       </tr>
     `).join('');
 
     contenedor.innerHTML = `
       <table>
         <thead>
-          <tr><th>Nombre</th><th>Email</th><th>Ingreso</th><th>Días disp. / totales</th></tr>
+          <tr><th>Nombre</th><th>Email</th><th>Ingreso</th><th>Antigüedad</th><th>Vacaciones</th></tr>
         </thead>
         <tbody>${filas}</tbody>
       </table>

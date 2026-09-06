@@ -1,7 +1,7 @@
 // scripts/crear-admin.js
 // Uso: node scripts/crear-admin.js correo@ejemplo.com
-// Convierte a un usuario ya registrado en administrador.
-// Si el usuario no existe, lo crea directamente con rol admin.
+// Convierte a un usuario ya registrado en administrador (para uso LOCAL en tu Mac).
+// En un servidor sin acceso SSH, usa en su lugar la página /configurar-admin.html.
 
 const bcrypt = require('bcryptjs');
 const db = require('../backend/database');

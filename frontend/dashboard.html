@@ -10,14 +10,14 @@
 
 <header class="app-header">
   <div class="marca">
-    <div class="icono">RH</div>
-    Portal RRHH
+    <img src="img/logo.png" alt="Logo de la empresa">
   </div>
   <div class="usuario-info">
     <span id="nombre-usuario">Cargando...</span>
-    <button class="boton-secundario" id="btn-salir">Cerrar sesión</button>
+    <button id="btn-salir">Cerrar sesión</button>
   </div>
 </header>
+<div class="franja-acento"></div>
 
 <div class="app-contenido">
 
@@ -31,11 +31,11 @@
     </div>
     <div class="tarjeta-resumen">
       <div class="numero" id="dias-usados">—</div>
-      <div class="etiqueta">Días usados este año</div>
+      <div class="etiqueta">Días usados (histórico)</div>
     </div>
     <div class="tarjeta-resumen">
-      <div class="numero" id="dias-totales">—</div>
-      <div class="etiqueta">Días totales al año</div>
+      <div class="numero" id="anios-cumplidos">—</div>
+      <div class="etiqueta">Años de antigüedad</div>
     </div>
     <div class="tarjeta-resumen">
       <div class="numero" id="fecha-ingreso" style="font-size: 18px;">—</div>
@@ -72,7 +72,7 @@
       <label for="motivo">Motivo (opcional)</label>
       <textarea id="motivo" rows="2" placeholder="Ej: Viaje familiar"></textarea>
 
-      <button type="submit" class="boton-primario" style="width: auto; padding: 10px 24px;">Enviar solicitud</button>
+      <button type="submit" class="boton-acento" style="width: auto; padding: 10px 24px;">Enviar solicitud</button>
     </form>
   </div>
 
@@ -89,17 +89,14 @@
 
 <script src="js/api.js"></script>
 <script>
-  let usuarioActual = null;
-
   async function cargarPerfil() {
     try {
       const perfil = await api('GET', '/api/usuarios/perfil');
-      usuarioActual = perfil;
       document.getElementById('nombre-usuario').textContent = perfil.nombre;
       document.getElementById('saludo').textContent = `Hola, ${perfil.nombre.split(' ')[0]} 👋`;
       document.getElementById('dias-disponibles').textContent = perfil.dias_disponibles;
       document.getElementById('dias-usados').textContent = perfil.dias_usados;
-      document.getElementById('dias-totales').textContent = perfil.dias_totales;
+      document.getElementById('anios-cumplidos').textContent = perfil.anios_cumplidos;
       document.getElementById('fecha-ingreso').textContent = formatearFecha(perfil.fecha_ingreso);
     } catch (e) {
       window.location.href = 'index.html';

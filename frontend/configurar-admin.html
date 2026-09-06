@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurar administrador — Portal RRHH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-tarjeta" style="max-width: 440px;">
+    <div class="auth-marca">
+      <img src="img/logo.png" alt="Logo de la empresa">
+    </div>
+    <p class="subtitulo">
+      Página especial para crear o promover un administrador, sin necesitar acceso
+      por terminal/SSH al servidor. Requiere la clave secreta configurada en el servidor
+      (variable de entorno <code>ADMIN_SETUP_KEY</code>).
+    </p>
+
+    <div class="mensaje-error" id="error"></div>
+    <div class="mensaje-exito" id="exito"></div>
+
+    <form id="form-admin">
+      <label for="clave">Clave secreta del servidor</label>
+      <input type="password" id="clave" required>
+
+      <label for="email">Email del usuario a promover/crear</label>
+      <input type="email" id="email" required>
+
+      <p style="font-size:12.5px; color: var(--color-texto-suave); margin: -6px 0 14px;">
+        Si ese email ya está registrado, solo lo convertimos en admin (los dos campos
+        de abajo se ignoran). Si no existe, lo creamos directamente como admin.
+      </p>
+
+      <label for="nombre">Nombre (solo si el usuario es nuevo)</label>
+      <input type="text" id="nombre">
+
+      <label for="password">Contraseña (solo si el usuario es nuevo)</label>
+      <input type="password" id="password">
+
+      <button type="submit" class="boton-primario">Configurar administrador</button>
+    </form>
+
+    <div class="enlace-abajo">
+      <a href="index.html">Volver al inicio de sesión</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const form = document.getElementById('form-admin');
+  const divError = document.getElementById('error');
+  const divExito = document.getElementById('exito');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    divError.style.display = 'none';
+    divExito.style.display = 'none';
+
+    const datos = {
+      clave: document.getElementById('clave').value,
+      email: document.getElementById('email').value.trim(),
+      nombre: document.getElementById('nombre').value.trim(),
+      password: document.getElementById('password').value
+    };
+
+    try {
+      const resultado = await api('POST', '/api/auth/configurar-admin', datos);
+      divExito.textContent = resultado.mensaje;
+      divExito.style.display = 'block';
+      form.reset();
+    } catch (err) {
+      divError.textContent = err.message;
+      divError.style.display = 'block';
+    }
+  });
+</script>
+
+</body>
+</html>
