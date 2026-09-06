@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión — Portal RRHH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-tarjeta">
+    <div class="auth-marca">
+      <div class="icono">RH</div>
+      <span>Portal RRHH</span>
+    </div>
+    <p class="subtitulo">Inicia sesión para ver tu saldo de vacaciones y tus solicitudes.</p>
+
+    <div class="mensaje-error" id="error"></div>
+
+    <form id="form-login">
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" required autocomplete="email">
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" required autocomplete="current-password">
+
+      <button type="submit" class="boton-primario">Iniciar sesión</button>
+    </form>
+
+    <div class="enlace-abajo">
+      ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  // Si ya hay sesión activa, redirige directo a su panel
+  (async () => {
+    try {
+      const yo = await api('GET', '/api/auth/me');
+      window.location.href = yo.rol === 'admin' ? 'admin.html' : 'dashboard.html';
+    } catch (e) { /* no hay sesión, se queda en login */ }
+  })();
+
+  const form = document.getElementById('form-login');
+  const divError = document.getElementById('error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    divError.style.display = 'none';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const resultado = await api('POST', '/api/auth/login', { email, password });
+      window.location.href = resultado.usuario.rol === 'admin' ? 'admin.html' : 'dashboard.html';
+    } catch (err) {
+      divError.textContent = err.message;
+      divError.style.display = 'block';
+    }
+  });
+</script>
+
+</body>
+</html>

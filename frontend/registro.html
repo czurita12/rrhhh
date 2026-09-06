@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear cuenta — Portal RRHH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-tarjeta">
+    <div class="auth-marca">
+      <div class="icono">RH</div>
+      <span>Portal RRHH</span>
+    </div>
+    <p class="subtitulo">Crea tu cuenta de empleado.</p>
+
+    <div class="mensaje-error" id="error"></div>
+
+    <form id="form-registro">
+      <label for="nombre">Nombre completo</label>
+      <input type="text" id="nombre" required>
+
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" required autocomplete="email">
+
+      <label for="fecha_ingreso">Fecha de ingreso a la empresa</label>
+      <input type="date" id="fecha_ingreso" required>
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" required minlength="6" autocomplete="new-password">
+
+      <button type="submit" class="boton-primario">Crear cuenta</button>
+    </form>
+
+    <div class="enlace-abajo">
+      ¿Ya tienes cuenta? <a href="index.html">Inicia sesión</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const form = document.getElementById('form-registro');
+  const divError = document.getElementById('error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    divError.style.display = 'none';
+
+    const datos = {
+      nombre: document.getElementById('nombre').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      fecha_ingreso: document.getElementById('fecha_ingreso').value,
+      password: document.getElementById('password').value
+    };
+
+    try {
+      await api('POST', '/api/auth/registro', datos);
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      divError.textContent = err.message;
+      divError.style.display = 'block';
+    }
+  });
+</script>
+
+</body>
+</html>

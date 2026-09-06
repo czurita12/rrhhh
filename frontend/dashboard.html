@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi panel — Portal RRHH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="marca">
+    <div class="icono">RH</div>
+    Portal RRHH
+  </div>
+  <div class="usuario-info">
+    <span id="nombre-usuario">Cargando...</span>
+    <button class="boton-secundario" id="btn-salir">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="app-contenido">
+
+  <h1 id="saludo">Hola 👋</h1>
+  <p style="color: var(--color-texto-suave); margin-top: -6px;">Este es tu resumen de vacaciones y permisos.</p>
+
+  <div class="tarjetas-resumen">
+    <div class="tarjeta-resumen">
+      <div class="numero" id="dias-disponibles">—</div>
+      <div class="etiqueta">Días disponibles</div>
+    </div>
+    <div class="tarjeta-resumen">
+      <div class="numero" id="dias-usados">—</div>
+      <div class="etiqueta">Días usados este año</div>
+    </div>
+    <div class="tarjeta-resumen">
+      <div class="numero" id="dias-totales">—</div>
+      <div class="etiqueta">Días totales al año</div>
+    </div>
+    <div class="tarjeta-resumen">
+      <div class="numero" id="fecha-ingreso" style="font-size: 18px;">—</div>
+      <div class="etiqueta">Fecha de ingreso</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Nueva solicitud</h2>
+    </div>
+
+    <div class="mensaje-error" id="error-solicitud"></div>
+    <div class="mensaje-exito" id="exito-solicitud"></div>
+
+    <form id="form-solicitud">
+      <label for="tipo">Tipo</label>
+      <select id="tipo" required>
+        <option value="vacaciones">Vacaciones</option>
+        <option value="permiso">Permiso</option>
+      </select>
+
+      <div class="fila-fechas">
+        <div>
+          <label for="fecha_inicio">Fecha de inicio</label>
+          <input type="date" id="fecha_inicio" required>
+        </div>
+        <div>
+          <label for="fecha_fin">Fecha de fin</label>
+          <input type="date" id="fecha_fin" required>
+        </div>
+      </div>
+
+      <label for="motivo">Motivo (opcional)</label>
+      <textarea id="motivo" rows="2" placeholder="Ej: Viaje familiar"></textarea>
+
+      <button type="submit" class="boton-primario" style="width: auto; padding: 10px 24px;">Enviar solicitud</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Mis solicitudes</h2>
+    </div>
+    <div id="contenedor-solicitudes">
+      <p class="vacio">Cargando...</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let usuarioActual = null;
+
+  async function cargarPerfil() {
+    try {
+      const perfil = await api('GET', '/api/usuarios/perfil');
+      usuarioActual = perfil;
+      document.getElementById('nombre-usuario').textContent = perfil.nombre;
+      document.getElementById('saludo').textContent = `Hola, ${perfil.nombre.split(' ')[0]} 👋`;
+      document.getElementById('dias-disponibles').textContent = perfil.dias_disponibles;
+      document.getElementById('dias-usados').textContent = perfil.dias_usados;
+      document.getElementById('dias-totales').textContent = perfil.dias_totales;
+      document.getElementById('fecha-ingreso').textContent = formatearFecha(perfil.fecha_ingreso);
+    } catch (e) {
+      window.location.href = 'index.html';
+    }
+  }
+
+  async function cargarSolicitudes() {
+    const contenedor = document.getElementById('contenedor-solicitudes');
+    const solicitudes = await api('GET', '/api/solicitudes/mias');
+
+    if (solicitudes.length === 0) {
+      contenedor.innerHTML = '<p class="vacio">Todavía no has hecho ninguna solicitud.</p>';
+      return;
+    }
+
+    const filas = solicitudes.map(s => `
+      <tr>
+        <td><span class="etiqueta-tipo">${s.tipo}</span></td>
+        <td>${formatearFecha(s.fecha_inicio)} → ${formatearFecha(s.fecha_fin)}</td>
+        <td>${s.dias}</td>
+        <td>${s.motivo || '—'}</td>
+        <td><span class="etiqueta-estado estado-${s.estado}">${s.estado}</span></td>
+      </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Tipo</th><th>Fechas</th><th>Días</th><th>Motivo</th><th>Estado</th></tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    `;
+  }
+
+  document.getElementById('form-solicitud').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorDiv = document.getElementById('error-solicitud');
+    const exitoDiv = document.getElementById('exito-solicitud');
+    errorDiv.style.display = 'none';
+    exitoDiv.style.display = 'none';
+
+    const datos = {
+      tipo: document.getElementById('tipo').value,
+      fecha_inicio: document.getElementById('fecha_inicio').value,
+      fecha_fin: document.getElementById('fecha_fin').value,
+      motivo: document.getElementById('motivo').value.trim()
+    };
+
+    try {
+      await api('POST', '/api/solicitudes', datos);
+      exitoDiv.textContent = 'Solicitud enviada. Queda pendiente de aprobación.';
+      exitoDiv.style.display = 'block';
+      document.getElementById('form-solicitud').reset();
+      await Promise.all([cargarPerfil(), cargarSolicitudes()]);
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  });
+
+  document.getElementById('btn-salir').addEventListener('click', async () => {
+    await api('POST', '/api/auth/logout');
+    window.location.href = 'index.html';
+  });
+
+  (async () => {
+    await cargarPerfil();
+    await cargarSolicitudes();
+  })();
+</script>
+
+</body>
+</html>

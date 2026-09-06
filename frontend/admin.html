@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de administrador — Portal RRHH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="marca">
+    <div class="icono">RH</div>
+    Portal RRHH · Admin
+  </div>
+  <div class="usuario-info">
+    <span id="nombre-usuario">Cargando...</span>
+    <button class="boton-secundario" id="btn-salir">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="app-contenido">
+
+  <h1>Panel de administrador</h1>
+  <p style="color: var(--color-texto-suave); margin-top: -6px;">Revisa solicitudes y consulta el saldo de cada empleado.</p>
+
+  <div class="panel">
+    <div class="panel-header"><h2>Solicitudes</h2></div>
+
+    <div class="tabs">
+      <div class="tab activo" data-estado="pendiente">Pendientes</div>
+      <div class="tab" data-estado="aprobada">Aprobadas</div>
+      <div class="tab" data-estado="rechazada">Rechazadas</div>
+      <div class="tab" data-estado="">Todas</div>
+    </div>
+
+    <div id="contenedor-solicitudes">
+      <p class="vacio">Cargando...</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>Empleados</h2></div>
+    <div id="contenedor-empleados">
+      <p class="vacio">Cargando...</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let estadoActivo = 'pendiente';
+
+  async function cargarPerfil() {
+    try {
+      const perfil = await api('GET', '/api/usuarios/perfil');
+      if (perfil.rol !== 'admin') { window.location.href = 'dashboard.html'; return; }
+      document.getElementById('nombre-usuario').textContent = perfil.nombre + ' (admin)';
+    } catch (e) {
+      window.location.href = 'index.html';
+    }
+  }
+
+  async function cargarSolicitudes() {
+    const contenedor = document.getElementById('contenedor-solicitudes');
+    contenedor.innerHTML = '<p class="vacio">Cargando...</p>';
+
+    const ruta = estadoActivo ? `/api/solicitudes?estado=${estadoActivo}` : '/api/solicitudes';
+    const solicitudes = await api('GET', ruta);
+
+    if (solicitudes.length === 0) {
+      contenedor.innerHTML = '<p class="vacio">No hay solicitudes en esta categoría.</p>';
+      return;
+    }
+
+    const filas = solicitudes.map(s => `
+      <tr>
+        <td>${s.empleado_nombre}</td>
+        <td><span class="etiqueta-tipo">${s.tipo}</span></td>
+        <td>${formatearFecha(s.fecha_inicio)} → ${formatearFecha(s.fecha_fin)}</td>
+        <td>${s.dias}</td>
+        <td><span class="etiqueta-estado estado-${s.estado}">${s.estado}</span></td>
+        <td>
+          ${s.estado === 'pendiente' ? `
+            <div class="acciones-fila">
+              <button class="boton-aprobar" data-id="${s.id}" data-accion="aprobada">Aprobar</button>
+              <button class="boton-rechazar" data-id="${s.id}" data-accion="rechazada">Rechazar</button>
+            </div>
+          ` : '—'}
+        </td>
+      </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Empleado</th><th>Tipo</th><th>Fechas</th><th>Días</th><th>Estado</th><th>Acción</th></tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    `;
+
+    contenedor.querySelectorAll('button[data-accion]').forEach(boton => {
+      boton.addEventListener('click', async () => {
+        const id = boton.dataset.id;
+        const accion = boton.dataset.accion;
+        try {
+          await api('PUT', `/api/solicitudes/${id}/estado`, { estado: accion });
+          await cargarSolicitudes();
+          await cargarEmpleados();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+  }
+
+  async function cargarEmpleados() {
+    const contenedor = document.getElementById('contenedor-empleados');
+    const empleados = await api('GET', '/api/usuarios');
+
+    const filas = empleados.map(u => `
+      <tr>
+        <td>${u.nombre}</td>
+        <td>${u.email}</td>
+        <td>${formatearFecha(u.fecha_ingreso)}</td>
+        <td>${u.dias_disponibles} / ${u.dias_totales}</td>
+      </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Email</th><th>Ingreso</th><th>Días disp. / totales</th></tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    `;
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      tab.classList.add('activo');
+      estadoActivo = tab.dataset.estado;
+      cargarSolicitudes();
+    });
+  });
+
+  document.getElementById('btn-salir').addEventListener('click', async () => {
+    await api('POST', '/api/auth/logout');
+    window.location.href = 'index.html';
+  });
+
+  (async () => {
+    await cargarPerfil();
+    await cargarSolicitudes();
+    await cargarEmpleados();
+  })();
+</script>
+
+</body>
+</html>
