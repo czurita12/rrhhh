@@ -4,8 +4,17 @@
 
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '..', 'data', 'rrhh.db');
+const dataDir = path.join(__dirname, '..', 'data');
+
+// Si la carpeta "data" no existe (por ejemplo, en un servidor recién desplegado
+// donde Git no sube carpetas vacías), la creamos antes de abrir la base de datos.
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const dbPath = path.join(dataDir, 'rrhh.db');
 const db = new Database(dbPath);
 
 // Buenas prácticas de SQLite
