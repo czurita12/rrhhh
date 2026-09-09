@@ -10,9 +10,15 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const usuariosRoutes = require('./routes/usuarios');
 const solicitudesRoutes = require('./routes/solicitudes');
+const asistenciasRoutes = require('./routes/asistencias');
 
 const app = express();
 const PUERTO = process.env.PORT || 3000;
+
+// Necesario para que req.ip devuelva la IP real del visitante y no la del
+// proxy de Hostinger — sin esto, la validación de "IP de oficina" no funciona
+// porque todas las peticiones parecerían venir del mismo proxy interno.
+app.set('trust proxy', true);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,6 +38,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/solicitudes', solicitudesRoutes);
+app.use('/api/asistencias', asistenciasRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

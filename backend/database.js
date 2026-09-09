@@ -54,4 +54,37 @@ db.exec(`
   )
 `);
 
+// Tabla de asistencias (marcado de entrada y salida)
+// ip_marcado guarda la IP desde donde se hizo el marcado, y dentro_oficina
+// indica si esa IP coincidió con la IP autorizada de la oficina (ver
+// utils/asistencias.js). Si no coincide, igual se guarda el registro, pero
+// queda marcado para revisión del admin.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS asistencias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    fecha TEXT NOT NULL,
+    hora_entrada TEXT,
+    hora_salida TEXT,
+    ip_entrada TEXT,
+    ip_salida TEXT,
+    dentro_oficina_entrada INTEGER NOT NULL DEFAULT 1,
+    dentro_oficina_salida INTEGER,
+    creado_en TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    UNIQUE(usuario_id, fecha)
+  )
+`);
+
+// Tabla de configuración general del sistema (clave-valor). Por ahora solo
+// guarda la IP de oficina, pero sirve para agregar más ajustes editables
+// desde el panel de admin en el futuro, sin tener que tocar variables de
+// entorno ni volver a desplegar.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS configuracion (
+    clave TEXT PRIMARY KEY,
+    valor TEXT
+  )
+`);
+
 module.exports = db;

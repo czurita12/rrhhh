@@ -41,8 +41,50 @@
   </div>
 
   <div class="panel">
+    <div class="panel-header"><h2>Configuración de asistencia</h2></div>
+
+    <div class="mensaje-error" id="error-config"></div>
+    <div class="mensaje-exito" id="exito-config"></div>
+
+    <label for="oficina-ip">IP(s) autorizadas de oficina</label>
+    <input type="text" id="oficina-ip" placeholder="Ej: 166.114.162.168">
+    <p style="font-size:12.5px; color: var(--color-texto-suave); margin: -10px 0 14px;">
+      Si un empleado marca desde otra IP, igual se registra pero queda señalado ⚠️ para revisión.
+      Puedes poner varias separadas por coma. Tu IP actual es: <strong id="tu-ip-actual">—</strong>
+      <button type="button" id="btn-usar-mi-ip" class="boton-texto" style="margin-left:6px;">usar esta</button>
+    </p>
+    <button id="btn-guardar-ip" class="boton-primario" style="width:auto; padding:9px 20px;">Guardar</button>
+  </div>
+
+  <div class="panel">
     <div class="panel-header"><h2>Empleados</h2></div>
     <div id="contenedor-empleados">
+      <p class="vacio">Cargando...</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>Asistencias</h2></div>
+
+    <div class="fila-fechas" style="grid-template-columns: 1fr 1fr 1fr; align-items:end;">
+      <div>
+        <label for="filtro-empleado">Empleado</label>
+        <select id="filtro-empleado">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label for="filtro-desde">Desde</label>
+        <input type="date" id="filtro-desde">
+      </div>
+      <div>
+        <label for="filtro-hasta">Hasta</label>
+        <input type="date" id="filtro-hasta">
+      </div>
+    </div>
+    <button id="btn-filtrar-asistencias" class="boton-secundario" style="width:auto; padding:8px 18px; margin-bottom:18px;">Filtrar</button>
+
+    <div id="contenedor-asistencias-admin">
       <p class="vacio">Cargando...</p>
     </div>
   </div>
@@ -141,6 +183,96 @@
     `;
   }
 
+  async function cargarConfiguracion() {
+    const config = await api('GET', '/api/asistencias/configuracion');
+    document.getElementById('oficina-ip').value = config.oficina_ip || '';
+    document.getElementById('tu-ip-actual').textContent = config.tu_ip_actual;
+  }
+
+  document.getElementById('btn-usar-mi-ip').addEventListener('click', () => {
+    const tuIp = document.getElementById('tu-ip-actual').textContent;
+    const campo = document.getElementById('oficina-ip');
+    const actuales = campo.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!actuales.includes(tuIp)) {
+      actuales.push(tuIp);
+      campo.value = actuales.join(', ');
+    }
+  });
+
+  document.getElementById('btn-guardar-ip').addEventListener('click', async () => {
+    const errorDiv = document.getElementById('error-config');
+    const exitoDiv = document.getElementById('exito-config');
+    errorDiv.style.display = 'none';
+    exitoDiv.style.display = 'none';
+    try {
+      await api('PUT', '/api/asistencias/configuracion', {
+        oficina_ip: document.getElementById('oficina-ip').value
+      });
+      exitoDiv.textContent = 'IP de oficina actualizada.';
+      exitoDiv.style.display = 'block';
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  });
+
+  async function poblarFiltroEmpleados() {
+    const empleados = await api('GET', '/api/usuarios');
+    const select = document.getElementById('filtro-empleado');
+    empleados.forEach(u => {
+      const opcion = document.createElement('option');
+      opcion.value = u.id;
+      opcion.textContent = u.nombre;
+      select.appendChild(opcion);
+    });
+  }
+
+  async function cargarAsistenciasAdmin() {
+    const contenedor = document.getElementById('contenedor-asistencias-admin');
+    contenedor.innerHTML = '<p class="vacio">Cargando...</p>';
+
+    const usuarioId = document.getElementById('filtro-empleado').value;
+    const desde = document.getElementById('filtro-desde').value;
+    const hasta = document.getElementById('filtro-hasta').value;
+
+    const params = new URLSearchParams();
+    if (usuarioId) params.set('usuario_id', usuarioId);
+    if (desde) params.set('desde', desde);
+    if (hasta) params.set('hasta', hasta);
+
+    const registros = await api('GET', `/api/asistencias?${params.toString()}`);
+
+    if (registros.length === 0) {
+      contenedor.innerHTML = '<p class="vacio">No hay asistencias en este rango.</p>';
+      return;
+    }
+
+    const totalHoras = registros.reduce((acc, r) => acc + (r.horas_trabajadas || 0), 0);
+
+    const filas = registros.map(r => `
+      <tr>
+        <td>${r.empleado_nombre}</td>
+        <td>${formatearFecha(r.fecha)}</td>
+        <td>${r.hora_entrada || '—'} ${r.dentro_oficina_entrada === 0 ? '⚠️' : ''}</td>
+        <td>${r.hora_salida || '—'} ${r.dentro_oficina_salida === 0 ? '⚠️' : ''}</td>
+        <td>${r.horas_trabajadas !== null ? r.horas_trabajadas + ' h' : '—'}</td>
+      </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+      <p style="font-size:13px; color:var(--color-texto-suave); margin-bottom:10px;">
+        ${registros.length} registro(s) · ${totalHoras.toFixed(2)} horas totales en este filtro
+      </p>
+      <table>
+        <thead><tr><th>Empleado</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p style="font-size:12px; color:var(--color-texto-suave); margin-top:10px;">⚠️ = marcado fuera de la red de la oficina</p>
+    `;
+  }
+
+  document.getElementById('btn-filtrar-asistencias').addEventListener('click', cargarAsistenciasAdmin);
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
@@ -159,6 +291,9 @@
     await cargarPerfil();
     await cargarSolicitudes();
     await cargarEmpleados();
+    await cargarConfiguracion();
+    await poblarFiltroEmpleados();
+    await cargarAsistenciasAdmin();
   })();
 </script>
 

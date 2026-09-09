@@ -45,6 +45,26 @@
 
   <div class="panel">
     <div class="panel-header">
+      <h2>Asistencia de hoy</h2>
+    </div>
+
+    <div class="mensaje-error" id="error-asistencia"></div>
+    <div class="mensaje-exito" id="exito-asistencia"></div>
+
+    <div id="resumen-asistencia-hoy" style="display:flex; gap:24px; margin-bottom:18px; font-size:14px;">
+      <div><strong>Entrada:</strong> <span id="hora-entrada">—</span></div>
+      <div><strong>Salida:</strong> <span id="hora-salida">—</span></div>
+      <div><strong>Horas trabajadas:</strong> <span id="horas-trabajadas">—</span></div>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button id="btn-marcar-entrada" class="boton-primario" style="width:auto; padding:10px 22px;">Marcar entrada</button>
+      <button id="btn-marcar-salida" class="boton-acento" style="width:auto; padding:10px 22px;">Marcar salida</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
       <h2>Nueva solicitud</h2>
     </div>
 
@@ -81,6 +101,15 @@
       <h2>Mis solicitudes</h2>
     </div>
     <div id="contenedor-solicitudes">
+      <p class="vacio">Cargando...</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Mi historial de asistencia</h2>
+    </div>
+    <div id="contenedor-asistencia">
       <p class="vacio">Cargando...</p>
     </div>
   </div>
@@ -163,9 +192,81 @@
     window.location.href = 'index.html';
   });
 
+  async function cargarHistorialAsistencia() {
+    const contenedor = document.getElementById('contenedor-asistencia');
+    const registros = await api('GET', '/api/asistencias/mias');
+
+    if (registros.length === 0) {
+      contenedor.innerHTML = '<p class="vacio">Todavía no tienes marcados de asistencia.</p>';
+      return;
+    }
+
+    const filas = registros.map(r => `
+      <tr>
+        <td>${formatearFecha(r.fecha)}</td>
+        <td>${r.hora_entrada || '—'} ${r.dentro_oficina_entrada === 0 ? '⚠️' : ''}</td>
+        <td>${r.hora_salida || '—'} ${r.dentro_oficina_salida === 0 ? '⚠️' : ''}</td>
+        <td>${r.horas_trabajadas !== null ? r.horas_trabajadas + ' h' : '—'}</td>
+      </tr>
+    `).join('');
+
+    contenedor.innerHTML = `
+      <table>
+        <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p style="font-size:12px; color:var(--color-texto-suave); margin-top:10px;">⚠️ = marcado fuera de la red de la oficina</p>
+    `;
+  }
+
+  async function cargarAsistenciaHoy() {
+    const datos = await api('GET', '/api/asistencias/hoy');
+    document.getElementById('hora-entrada').textContent = datos.hora_entrada || '—';
+    document.getElementById('hora-salida').textContent = datos.hora_salida || '—';
+    document.getElementById('horas-trabajadas').textContent =
+      datos.horas_trabajadas !== null ? `${datos.horas_trabajadas} h` : '—';
+
+    document.getElementById('btn-marcar-entrada').disabled = !!datos.hora_entrada;
+    document.getElementById('btn-marcar-salida').disabled = !datos.hora_entrada || !!datos.hora_salida;
+  }
+
+  document.getElementById('btn-marcar-entrada').addEventListener('click', async () => {
+    const errorDiv = document.getElementById('error-asistencia');
+    const exitoDiv = document.getElementById('exito-asistencia');
+    errorDiv.style.display = 'none';
+    exitoDiv.style.display = 'none';
+    try {
+      const resultado = await api('POST', '/api/asistencias/marcar-entrada');
+      exitoDiv.textContent = resultado.mensaje;
+      exitoDiv.style.display = 'block';
+      await cargarAsistenciaHoy();
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  });
+
+  document.getElementById('btn-marcar-salida').addEventListener('click', async () => {
+    const errorDiv = document.getElementById('error-asistencia');
+    const exitoDiv = document.getElementById('exito-asistencia');
+    errorDiv.style.display = 'none';
+    exitoDiv.style.display = 'none';
+    try {
+      const resultado = await api('POST', '/api/asistencias/marcar-salida');
+      exitoDiv.textContent = resultado.mensaje;
+      exitoDiv.style.display = 'block';
+      await cargarAsistenciaHoy();
+    } catch (err) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  });
+
   (async () => {
     await cargarPerfil();
     await cargarSolicitudes();
+    await cargarAsistenciaHoy();
+    await cargarHistorialAsistencia();
   })();
 </script>
 

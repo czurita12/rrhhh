@@ -15,6 +15,36 @@ Sistema básico para practicar: registro/login de usuarios, base de datos, roles
   por una clave secreta (`ADMIN_SETUP_KEY`), pensada para hostings donde no
   quieres habilitar acceso por terminal.
 
+## Control de asistencia
+
+Los empleados pueden marcar entrada y salida desde su dashboard. El sistema:
+
+- Calcula automáticamente las horas trabajadas del día (entrada → salida)
+- Valida que el marcado venga de la IP pública de tu oficina — si no coincide,
+  **igual permite marcar**, pero lo señala con ⚠️ para que el admin lo revise
+- El admin tiene un panel con filtros por empleado y rango de fechas, con
+  el total de horas del filtro aplicado
+
+### Configurar la IP de oficina (sin tocar código ni redesplegar)
+
+Entra al panel de administrador → sección "Configuración de asistencia".
+Ahí puedes:
+
+- Ver la IP desde la que estás entrando en ese momento (útil si estás en la
+  oficina ahora mismo — hay un botón "usar esta" para copiarla directo)
+- Escribir una o varias IPs autorizadas, separadas por coma
+- Guardar — el cambio aplica de inmediato, sin reiniciar el servidor
+
+Esta configuración se guarda en la base de datos (tabla `configuracion`), así
+que sobrevive a los despliegues. La variable de entorno `OFICINA_IP` en
+`.env` solo se usa como valor inicial la primera vez, antes de que el admin
+configure algo desde el panel.
+
+**Nota técnica:** el servidor usa `app.set('trust proxy', true)` en
+`server.js` para poder leer la IP real del visitante detrás del proxy de
+Hostinger — sin esto, todas las peticiones parecerían venir de la misma IP
+interna del hosting.
+
 ## Cómo funciona el cálculo de vacaciones
 
 Ejemplo: alguien ingresó el 2023-06-01. Hoy (2026-09-06) ya cumplió su
